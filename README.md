@@ -1,11 +1,11 @@
 # node-shm
 
-share-memory library for Hydra
+share-memory library
 
 ## install
 
 ```sh
-tnpm install -save @ali/node-shm
+npm install -save node-shm
 ```
 
 ## run test
@@ -28,7 +28,7 @@ Shm = require '@ali/node-shm'
 
 # new Shm [options]
 # @options:
-# + namespace: 命名空间(默认为"hydra/")
+# + namespace: 命名空间(默认为"default/")
 # + dir: 共享内存位置, linux下默认为/dev/shm, osx需要手动指定一块已经创建区域
 # m = new Shm namespace: 'ddd/', dir: 'Volume/shm'
 m = new Shm
@@ -73,7 +73,7 @@ m.create key, value, (err) ->
 
 ### ~~(已废弃) Promise写法~~
 ```coffee
-  # Shm = require '@ali/node-shm'
+  # Shm = require 'node-shm'
   #
   # m = new Shm
   #

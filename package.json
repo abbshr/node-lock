@@ -1,5 +1,5 @@
 {
-  "name": "@ali/node-shm",
+  "name": "node-shm",
   "version": "0.0.9",
   "description": "shm for hydra",
   "dependencies": {
