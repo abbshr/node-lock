@@ -1,19 +1,16 @@
 {
   "name": "node-shm",
   "version": "0.0.9",
-  "description": "shm for hydra",
+  "description": "share-memory library",
   "dependencies": {
     "async": "~1.4.2",
     "bluebird": "*",
     "should": "~7.0.3"
   },
   "main": "index.coffee",
-  "publishConfig": {
-    "registry": "http://registry.npm.alibaba-inc.com"
-  },
   "scripts": {
     "test": "cake test"
   },
-  "author": "moxue.shr <moxue.shr@alibaba-inc.com>",
+  "author": "ran <abbshr@outlook.com>",
   "license": "MIT"
 }
