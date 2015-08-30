@@ -1,109 +1,57 @@
 # node-shm
 
-share-memory library for Hydra
+share-memory library (带互斥锁版本).
 
-## install
+Notice: 这一分支下开发试验性功能, 是互斥锁版本的分支, benchmark和unit test尚不完善, 切勿用于线上环境.
 
-```sh
-tnpm install -save @ali/node-shm
-```
+### TODO
 
-## run test
++ Parser性能测试
++ 压力测试
 
-```sh
-# 全部测试用例
-npm test
-# or
-cake test
+原理: 由于Node的单进程单线程模型, 同一时间只允许一个阻塞任务执行,
+利用这一机制在Linux内存映射文件系统`/dev/shm`上使用Node原生的阻塞读写函数, 可以实现多进程对同一块内存区域访问的读写互斥作用.
 
-# 运行单个测试, 如create
-cake -c create test
-```
+Notice: 由于资源访问的互斥性, 带来不可避免的同步原语, 因此任何异步执行是无意义的, 最终仍需要等待锁的释放, 所以服务端采用同步模型.
+但C/S的结构允许客户端的异步请求, 这样就做到了异步互斥.
 
 ## Usage
 
-### callback写法
 ```coffee
-Shm = require '@ali/node-shm'
+# master process
+# shm server
+ShmServer = require 'node-shm/lib/lock-server'
 
-# new Shm [options]
+# ShmServer [options]
 # @options:
-# + namespace: 命名空间(默认为"hydra/")
+# + namespace: 命名空间(默认为"default")
 # + dir: 共享内存位置, linux下默认为/dev/shm, osx需要手动指定一块已经创建区域
-# m = new Shm namespace: 'ddd/', dir: 'Volume/shm'
-m = new Shm
-
-m.retrieve key, (err, ret) -> # key支持通配符*
-m.delete key, (err) ->
-m.delete (err) -> # delete all keys
-m.push key, value, (err) ->
-m.create key, value, (err) ->
+# m = new ShmServer namespace: 'ddd', dir: '/Volume/shm'
+server = ShmServer()
+# 启动服务端
+server.startStandAlone()
 ```
 
-### 事件写法
 ```coffee
-  m
-  .once 'end', (ret) ->
-    console.log ret
-    # ret是一个包含返回数据和key的数组
-    # => [{key: 'xx', value: 'xx'}, ...]
-  .once 'created', () ->
-    console.log 'created key & data'
-  .once 'finish', () ->
-    console.log 'append data'
-  .on 'error', (err) ->
-    console.log err
-  .create 'key', 'value'
-  .retrieve 'key*'
-  .push 'key1', 'value'
+# other process
+ShmClient = require 'node-shm/lib/client'
+client = new ShmClient
+# 连接服务端socket
+client.connect()
+.then (shm) ->
+  shm
+  # read
+  .retrieve 'Ran::*'
+  .once 'retrieve', (ret) ->
+    console.log entry.key, entry.value for entry in ret
+  # write
   .delete 'key'
-  .delete()
-  .on 'deleted', () ->
-    console.log 'del'
-```
-
-#### 事件列表
-```coffee
-"end": .retrieve()
-"deleted": .delete()
-"finished": .push()
-"created": .create()
-"error"
-```
-
-### ~~(已废弃) Promise写法~~
-```coffee
-  # Shm = require '@ali/node-shm'
-  #
-  # m = new Shm
-  #
-  # # 使用前必须mount
-  # m.mount()
-  # # => Promise
-  # .then () ->
-  #   # 创建/覆盖一个key，同时写入值
-  #   m.create "qb45", "I 'm value"
-  #   # => Promise
-  # .then () ->
-  #   # 根据key获取数据
-  #   m.retrieve key
-  #   # => Promise
-  # .then (value) ->
-  #   # => Buffer
-  #   console.log value.toString()
-  #   # 追加数据
-  #   m.push 'qb45', "appendee"
-  #   # => Promise
-  # .then () ->
-  #   # 删除一个key
-  #   m.delete 'qb45'
-  #   # => Promise
-  # .then () ->
-  #   # 直接强制丢弃激活的内存区域
-  #   m.detach()
-  #   # => Promise
-  # .then () ->
-  #   console.log 'detached'
-  # .catch (err) ->
-  #   console.error err
+  # write
+  .push 'key', 'value'
+  # write
+  .create 'key', 'value'
+  # write
+  .clean()
+.catch (err) ->
+  console.error err
 ```
