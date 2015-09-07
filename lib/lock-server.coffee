@@ -1,7 +1,7 @@
 # author: ran <abbshr@outlook.com>
 path = require 'path'
 net = require 'net'
-M = require './shm'
+Resource = require './core'
 Parser = require './parser'
 
 server = null
@@ -9,7 +9,7 @@ server = null
 class LockServer extends Parser
 
   constructor: (options) ->
-    @_m = new M options
+    @_resource = new Resource options
     @_server = null
     @init()
     super()
@@ -25,14 +25,14 @@ class LockServer extends Parser
         @parse socket, (raw) =>
           packet = raw.toString 'utf-8'
           @response socket, @packetParser packet
-    .listen path.join '/tmp', "#{@_m.dir}/#{@_m.namespace}".replace /\//g, '-'
+    .listen path.join '/tmp', "#{@_resource.dir}/#{@_resource.namespace}".replace /\//g, '-'
 
   packetParser: (packet) ->
     [command, args...] = packet.split '\n'
     @pack command, exec command, args
 
   exec: (command, args) ->
-    @_m["#{command}Sync"] args...
+    @_resource["#{command}Sync"] args...
 
   response: (socket, packet) ->
     socket.write packet

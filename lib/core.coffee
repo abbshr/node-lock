@@ -1,10 +1,10 @@
-# node-shm
+# synchronize resource operation
 # author: ran <abbshr@outlook.com>
 
 fs = require 'fs'
 path = require 'path'
 
-class Shm
+class Resource
   constructor: (options = {}) ->
     options.namespace ?= "default"
     options.dir ?= "/dev/shm"
@@ -18,7 +18,7 @@ class Shm
         fs.mkdirSync @_ref
       super()
     else
-      throw new Error "invalid shm path"
+      throw new Error "invalid resource path"
 
   retrieveSync: (key) ->
     regstr = key
@@ -60,4 +60,4 @@ class Shm
         @_clean path.join(entry, item), yes
       fs.rmdirSync entry if force
 
-module.exports = Shm
+module.exports = Resource

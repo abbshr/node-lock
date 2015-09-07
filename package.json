@@ -1,7 +1,7 @@
 {
-  "name": "node-shm",
+  "name": "node-lock",
   "version": "0.2.0",
-  "description": "share-memory library",
+  "description": "Node.js lock library for multi-process read/write",
   "dependencies": {
     "async": "~1.4.2",
     "bluebird": "*",

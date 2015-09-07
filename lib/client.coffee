@@ -2,10 +2,10 @@
 net = require 'net'
 Parser = require './parser'
 
-class ShmClient extends Parser
+class LockClient extends Parser
 
   constructor: (sock) ->
-    @sock ?= '/tmp/-dev-shm-default'
+    @sock ?= '/tmp/-dev-default'
     super()
     @init()
 
@@ -56,4 +56,4 @@ class ShmClient extends Parser
     @_sendPacket packet
     this
 
-module.exports = ShmClient
+module.exports = LockClient

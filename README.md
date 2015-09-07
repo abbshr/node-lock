@@ -1,6 +1,8 @@
-# node-shm
+# node-lock
 
-share-memory library (带互斥锁版本).
+Node.js进程互斥锁:
+
+Linux下默认读写`/dev/shm`.
 
 Notice: 这一分支下开发试验性功能, 是互斥锁版本的分支, benchmark和unit test尚不完善, 切勿用于线上环境.
 
@@ -19,27 +21,27 @@ Notice: 由于资源访问的互斥性, 带来不可避免的同步原语, 因�
 
 ```coffee
 # master process
-# shm server
-ShmServer = require 'node-shm/lib/lock-server'
+# lock server
+LockServer = require 'node-lock/lib/lock-server'
 
-# ShmServer [options]
+# LockServer [options]
 # @options:
 # + namespace: 命名空间(默认为"default")
 # + dir: 共享内存位置, linux下默认为/dev/shm, osx需要手动指定一块已经创建区域
-# m = new ShmServer namespace: 'ddd', dir: '/Volume/shm'
-server = ShmServer()
+# m = new LockServer namespace: 'ddd', dir: '/Volume/shm'
+# m = new LockServer namespace: 'ddd', dir: '/Volume/shm'
 # 启动服务端
 server.startStandAlone()
 ```
 
 ```coffee
 # other process
-ShmClient = require 'node-shm/lib/client'
-client = new ShmClient
+LockClient = require 'node-lock/lib/client'
+client = new LockClient
 # 连接服务端socket
 client.connect()
-.then (shm) ->
-  shm
+.then (resource) ->
+  resource
   # read
   .retrieve 'Ran::*'
   .once 'retrieve', (ret) ->

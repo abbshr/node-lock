@@ -1,1 +1,1 @@
-module.exports = require './lib/shm'
+module.exports = require './lib/core'
