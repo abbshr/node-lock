@@ -1,6 +1,6 @@
 {
   "name": "node-lock",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Node.js lock library for multi-process read/write",
   "dependencies": {
     "async": "~1.4.2",

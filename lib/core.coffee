@@ -8,6 +8,7 @@ class Resource
   constructor: (options = {}) ->
     options.namespace ?= "default"
     options.dir ?= "/dev/shm"
+    # 设置锁的超时时间
     options.lockTimeout ?= 5000
     {@namespace, @dir, @lockTimeout} = options
     @init()
@@ -45,10 +46,13 @@ class Resource
       null
 
   lockSync: (key, flag) ->
+    lockResource = "#{@lockdir}/#{key}"
+    lockFile = "#{lockResource}/#{flag}.lock"
+
     ret = checkLocked key, flag
     unless ret?
       fs.writeFileSync lockFile, 1 unless locked
-      # 设置锁的超时时间
+      # 超时后锁自动释放
       setTimeout =>
         @unlockSync key, flag
       , @lockTimeout
