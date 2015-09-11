@@ -13,6 +13,7 @@ class LockServer extends Parser
   constructor: (options) ->
     @_resource = new Resource options
     @_server = null
+    @_lockTimeout = 800
     @sock = path.join '/tmp', "#{@_resource.dir}/#{@_resource.namespace}".replace /\//g, '-'
     @init()
     super()
@@ -20,7 +21,7 @@ class LockServer extends Parser
   init: ->
     process.on 'exit', =>
       @close()
-      
+
     if fs.existsSync @sock
       try
         fs.unlinkSync @sock
@@ -41,7 +42,12 @@ class LockServer extends Parser
     ret = @exec command, args
 
     if ret instanceof Error
-      @pack 'error', JSON.stringify ret
+      if ret.name is 'ResourceLocked'
+        setImmediate =>
+          # 重试
+          @packetParser packet
+      else
+        @pack 'error', JSON.stringify ret
     else if ret?
       @pack command, JSON.stringify ret
     else

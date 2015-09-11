@@ -49,27 +49,37 @@ class LockClient extends Parser
     @client.write packet
 
   retrieve: (key) ->
-    packet = @pack 'retrieve', key
+    packet = @pack 'retrieve', key, process.pid
     @_sendPacket packet
     this
 
   delete: (key) ->
-    packet = @pack 'delete', key
+    packet = @pack 'delete', key, process.pid
     @_sendPacket packet
     this
 
   push: (key, value) ->
-    packet = @pack 'push', key, value
+    packet = @pack 'push', key, value, process.pid
     @_sendPacket packet
     this
 
   create: (key, value) ->
-    packet = @pack 'create', key, value
+    packet = @pack 'create', key, value, process.pid
     @_sendPacket packet
     this
 
   clean: () ->
-    packet = @pack 'clean'
+    packet = @pack 'clean', process.pid
+    @_sendPacket packet
+    this
+
+  lock: (key) ->
+    packet = @pack 'lock', key, process.pid
+    @_sendPacket packet
+    this
+
+  unlock: (key) ->
+    packet = @pack 'unlock', key, process.pid
     @_sendPacket packet
     this
 
