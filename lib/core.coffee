@@ -9,6 +9,9 @@ class Resource
     options.namespace ?= "default"
     options.dir ?= "/dev/shm"
     {@namespace, @dir} = options
+    @init()
+
+  init: ->
     if fs.existsSync(@dir) and fs.statSync(@dir).isDirectory()
       @_ref = path.join @dir, @namespace
       if fs.existsSync @_ref
@@ -16,7 +19,6 @@ class Resource
           throw new Error "#{@_ref} is not a directory"
       else
         fs.mkdirSync @_ref
-      super()
     else
       throw new Error "invalid resource path"
 
@@ -30,29 +32,37 @@ class Resource
       key: entry, value: fs.readFileSync "#{@_ref}/#{entry}"
 
   deleteSync: (key) ->
-    # delete all
-    unless key?
-      @_clean @_ref
-    else
-      fs.unlinkSync "#{@_ref}/#{key}"
+    try
+      # delete all
+      unless key?
+        @_clean @_ref
+      else
+        fs.unlinkSync "#{@_ref}/#{key}"
+    catch err
+      err
 
   pushSync: (key, value) ->
-    fs.appendFileSync "#{@_ref}/#{key}", value
+    try
+      fs.appendFileSync "#{@_ref}/#{key}", value
+    catch err
+      err
 
   createSync: (key, value) ->
-    fs.writeFileSync "#{@_ref}/#{key}", value
+    try
+      fs.writeFileSync "#{@_ref}/#{key}", value
+    catch err
+      err
 
   cleanSync: () ->
-    @_clean @_ref
+    try
+      @_clean @_ref
+      null
+    catch err
+      err
 
   # sync mode
   _clean: (entry, force = no) ->
-    try
-      isFile = fs.statSync(entry).isFile()
-    catch err
-      return process.nextTick () =>
-        @emit "error", err
-    if isFile
+    if fs.statSync(entry).isFile()
       fs.unlinkSync entry
       console.log "=> rm #{entry}"
     else
