@@ -22,22 +22,22 @@ Notice: 由于资源访问的互斥性, 带来不可避免的同步原语, 因�
 ```coffee
 # master process
 # lock server
-LockServer = require 'node-lock/lib/lock-server'
+LockProxy = require 'node-lock/proxy'
 
 # LockServer [options]
 # @options:
 # + namespace: 命名空间(默认为"default")
 # + dir: 共享内存位置, linux下默认为/dev/shm, osx需要手动指定一块已经创建区域
-# m = new LockServer namespace: 'ddd', dir: '/Volume/shm'
-# m = new LockServer namespace: 'ddd', dir: '/Volume/shm'
+# m = LockProxy namespace: 'ddd', dir: '/Volume/shm'
+# m = LockProxy namespace: 'ddd', dir: '/Volume/shm'
 # 启动服务端
-server.startStandAlone()
+LockProxy().startStandAlone()
 ```
 
 ```coffee
 # other process
 LockClient = require 'node-lock/lib/client'
-client = new LockClient
+client = new LockClient '/tmp/-tmp-default'
 # 连接服务端socket
 client.connect()
 .then (resource) ->
