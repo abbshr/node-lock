@@ -36,7 +36,7 @@ LockProxy().startStandAlone()
 
 ```coffee
 # other process
-LockClient = require 'node-lock/lib/client'
+LockClient = require 'node-lock'
 client = new LockClient '/tmp/-tmp-default'
 # 连接服务端socket
 client.connect()
