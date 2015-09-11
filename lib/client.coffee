@@ -4,8 +4,7 @@ Parser = require './parser'
 
 class LockClient extends Parser
 
-  constructor: (sock) ->
-    @sock ?= '/tmp/-dev-default'
+  constructor: (@sock = '/tmp/-dev-shm-default') ->
     super()
     @init()
 
@@ -16,17 +15,35 @@ class LockClient extends Parser
         @emit command, args...
 
   connect: () ->
-    @client ?= net.connect sock
+    @client ?= net.connect @sock
     @cache ?= new Promise (resolve, reject) =>
       @client
-      .on 'connect', () =>
-        resolve @client
-      .on 'error', (err) ->
-        reject err
-      .on 'close', (err) ->
-        reject err
-      .on 'readable', () =>
-        @parse @client
+        .on 'connect', () =>
+          resolve @client
+        .on 'error', (err) ->
+          reject err
+        .on 'close', (err) ->
+          reject err
+      @parse @client, (raw) =>
+        @_packetParser raw
+
+  _packetParser: (packet) ->
+    splitIndex = packet.indexOf 0x0a
+    event = packet[0...splitIndex].toString 'utf-8'
+    data = packet[splitIndex + 1 ...].toString 'utf-8'
+
+    if event is 'error'
+      @emit event, new Error JSON.parse data
+    else if data?.length
+      @emit event, @_dataParser data
+    else
+      @emit event
+
+  _dataParser: (data) ->
+    for entry in JSON.parse data
+      {key, value} = entry
+      value = new Buffer value
+      {key, value}
 
   _sendPacket: (packet) ->
     @client.write packet
