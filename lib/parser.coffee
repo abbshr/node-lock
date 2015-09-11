@@ -9,7 +9,7 @@
   ################
   #    .....\n   #
   ################
-  #    row n\n   #
+  #    row n     #
   ################
   #     \r\n     #
   ################
@@ -23,37 +23,45 @@ class Parser extends EventEmitter
   DONE: 1
 
   constructor: () ->
-    @_packet = []
-    @_lastChunk = null
-    @state = Parser::OPEN
     @emit 'init'
 
-  reset: () ->
-    @state = Parser::OPEN
-    @_packet = []
-    @emit 'reset'
+  parse: (readableStream, next = ->) ->
+    state = Parser::OPEN
+    packet = []
 
-  parse: (src, next = ->) ->
-    while chunk = src.read 1
-      switch @state
-        when Parser::OPEN
-          # '\r'
-          if chunk[0] is 0x0d
-            @state = Parser::COLLECTING
-            @_lastChunk = chunk
-          else
-            @_packet.push chunk
-        when Parser::COLLECTING
-          # '\n'
-          if chunk[0] is 0x0a
-            @state = Parser::DONE
-          else
-            @_packet.concat [@_lastChunk, chunk]
-        when Parser::DONE
-          next @_packet
-          @emit 'done', @_packet
-          @reset()
+    reset = =>
+      state = Parser::OPEN
+      packet = []
+
+    done = (packet) =>
+      state = Parser::DONE
+      @emit 'done', packet
+      next new Buffer packet
+
+    readableStream.on 'data', (chunk) =>
+      for byte in chunk
+        switch state
+          when Parser::OPEN
+            # '\r'
+            if byte is 0x0d
+              state = Parser::COLLECTING
+            else
+              packet.push byte
+          when Parser::COLLECTING
+            # '\n'
+            if byte is 0x0a
+              done packet
+              reset()
+            else
+              packet.push 0x0d
+              unless byte is 0x0d
+                state = Parser::OPEN
+                packet.push byte
+          when Parser::DONE
+            reset()
 
   pack: (args...) ->
     packet = "#{args.join '\n'}\r\n"
     new Buffer packet, 'utf-8'
+
+module.exports = Parser
