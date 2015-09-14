@@ -33,25 +33,25 @@ class LockServer extends Parser
     @_server ?= net.createServer (socket) =>
       @parse socket, (raw) =>
         packet = raw.toString 'utf-8'
-        @response socket, @packetParser packet
+        @packetParser socket, packet
     .listen @sock, () =>
       log "Lock proxy server start listenning at #{@sock}"
 
-  packetParser: (packet) ->
+  packetParser: (socket, packet) ->
     [command, args...] = packet.split '\n'
     ret = @exec command, args
 
     if ret instanceof Error
       if ret.name is 'ResourceLocked'
         setImmediate =>
-          # 重试
-          @packetParser packet
+          # 如果资源被上锁, 在next tick里重试
+          @packetParser socket, packet
       else
-        @pack 'error', JSON.stringify ret
+        @response socket, @pack 'error', JSON.stringify ret
     else if ret?
-      @pack command, JSON.stringify ret
+      @response socket, @pack command, JSON.stringify ret
     else
-      @pack command, ''
+      @response socket, @pack command, ''
 
   exec: (command, args) ->
     @_resource["#{command}Sync"]? args...

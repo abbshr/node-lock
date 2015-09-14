@@ -32,6 +32,7 @@ class LockClient extends Parser
     event = packet[0...splitIndex].toString 'utf-8'
     data = packet[splitIndex + 1 ...].toString 'utf-8'
 
+    console.log event, data
     if event is 'error'
       @emit event, new Error JSON.parse data
     else if data?.length

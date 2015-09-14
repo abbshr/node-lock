@@ -24,11 +24,14 @@ class Resource
     else
       throw new Error "invalid resource path"
 
-    initLock()
+    @initLock()
 
   initLock: ->
     @lockdir = "#{@_ref}.lock"
-    fs.mkdirSync @lockdir unless fs.existsSync @lockdir
+    if fs.existsSync @lockdir
+      @_clean @lockdir
+    else
+      fs.mkdirSync @lockdir
 
   # 检查指定资源是否可以加锁(是否正在被其他进程使用)
   checkLocked: (key, flag) ->
@@ -36,12 +39,13 @@ class Resource
     lockFile = "#{lockResource}/#{flag}.lock"
     fs.mkdirSync lockResource unless fs.existsSync lockResource
 
-    count = fs.readdirSync lockResource
+    count = fs.readdirSync(lockResource).length
     locked = fs.existsSync lockFile
 
     if count > 0 and not locked
       err = new Error "lock request failed"
       err.name = "ResourceLocked"
+      err
     else
       null
 
@@ -49,81 +53,69 @@ class Resource
     lockResource = "#{@lockdir}/#{key}"
     lockFile = "#{lockResource}/#{flag}.lock"
 
-    ret = checkLocked key, flag
-    unless ret?
-      fs.writeFileSync lockFile, 1 unless locked
+    locked = fs.existsSync lockFile
+    err = @checkLocked key, flag
+    unless err?
+      fs.writeFileSync lockFile, 1
       # 超时后锁自动释放
       setTimeout =>
         @unlockSync key, flag
       , @lockTimeout
       null
     else
-      ret
+      err
 
   unlockSync: (key, flag) ->
     lockResource = "#{@lockdir}/#{key}"
     lockFile = "#{lockResource}/#{flag}.lock"
 
-    if fs.existsSync lockFile
-      fs.unlinkSync lockFile
-      null
+    fs.unlinkSync lockFile if fs.existsSync lockFile
 
   retrieveSync: (key, flag) ->
-    ret = checkLocked key, flag
-    return ret if ret?
-
     regstr = key
             .replace /[\+\-\^\$\?\.\{\}\[\]\|\,\(\)]/g, (o) -> "\\#{o}"
             .replace /\*/g, ".*"
     pattern = new RegExp "^#{regstr}$"
 
     ret = for entry in fs.readdirSync @_ref when pattern.test entry
-      key: entry, value: fs.readFileSync "#{@_ref}/#{entry}"
+      unless err = @checkLocked key, flag
+        key: entry
+        value: fs.readFileSync "#{@_ref}/#{entry}"
 
-    unlockSync key, flag
-    ret
+    # @unlockSync key, flag
+    if ret.length
+      ret.filter (entry) -> entry?
+    else
+      err
 
   deleteSync: (key, flag) ->
-    ret = checkLocked key, flag
-    return ret if ret?
-
     try
-      # delete all
-      unless key?
-        @_clean @_ref
-      else
-        fs.unlinkSync "#{@_ref}/#{key}"
-      unlockSync key, flag
+      throw err if err = @checkLocked key, flag
+      fs.unlinkSync "#{@_ref}/#{key}"
+      # @unlockSync key, flag
     catch err
       err
 
   pushSync: (key, value, flag) ->
-    ret = checkLocked key, flag
-    return ret if ret?
-
+    return err if err = @checkLocked key, flag
     try
       fs.appendFileSync "#{@_ref}/#{key}", value
-      unlockSync key, flag
+      # @unlockSync key, flag
     catch err
       err
 
   createSync: (key, value, flag) ->
-    ret = checkLocked key, flag
-    return ret if ret?
-
+    return err if err = @checkLocked key, flag
     try
       fs.writeFileSync "#{@_ref}/#{key}", value
-      unlockSync key, flag
+      # @unlockSync key, flag
     catch err
       err
 
   cleanSync: (flag) ->
-    ret = checkLocked key, flag
-    return ret if ret?
-
     try
       @_clean @_ref
-      unlockSync key, flag
+      # @unlockSync key, flag
     catch err
       err
 

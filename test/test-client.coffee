@@ -9,9 +9,9 @@ client.connect()
     client
     .on 'retrieve', (ret) ->
       console.log ret
-      client.unlock 'key'
+      # client.unlock 'key'
     .once 'create', () ->
       console.log 'created'
-      client.retrieve 'key*'
+      client.retrieve 'key'
     .create 'key', 'value'
   .lock 'key'
