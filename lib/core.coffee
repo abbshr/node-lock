@@ -53,7 +53,6 @@ class Resource
     lockResource = "#{@lockdir}/#{key}"
     lockFile = "#{lockResource}/#{flag}.lock"
 
-    locked = fs.existsSync lockFile
     err = @checkLocked key, flag
     unless err?
       fs.writeFileSync lockFile, 1
